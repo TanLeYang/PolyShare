@@ -11,6 +11,8 @@ contract NFTMarket is ReentrancyGuard {
   using Counters for Counters.Counter;
   Counters.Counter private _itemIds;
   Counters.Counter private _itemsSold;
+  Counters.Counter private _donationPoolIds;
+  Counters.Counter private _donationPoolsCreated;
 
   address payable owner;
   uint256 listingPrice = 0.025 ether;
@@ -29,7 +31,19 @@ contract NFTMarket is ReentrancyGuard {
     bool sold;
   }
 
+  struct DonationPool {
+    uint itemId;
+    uint256 tokenId;
+    address payable creator;
+    uint currPoolValue;
+    uint numDonors;
+    uint startTime;
+    uint votingPeriod;
+    uint endTime;
+  }
+
   mapping(uint256 => MarketItem) private idToMarketItem;
+  mapping(uint256 => DonationPool) private idToDonationPool;
 
   event MarketItemCreated (
     uint indexed itemId,
@@ -39,6 +53,17 @@ contract NFTMarket is ReentrancyGuard {
     address owner,
     uint256 price,
     bool sold
+  );
+
+  event DonationPoolCreated (
+    uint indexed itemId,
+    uint256 indexed tokenId,
+    address indexed creator,
+    uint currPoolValue,
+    uint numDonors,
+    uint startTime,
+    uint votingPeriod,
+    uint endTime
   );
 
   /* Returns the listing price of the contract */
@@ -81,6 +106,41 @@ contract NFTMarket is ReentrancyGuard {
     );
   }
 
+   /* Creates a donation pool */
+  function createDonationPool(
+    uint256 tokenId,
+    uint votingPeriod
+  ) public payable nonReentrant {
+    require(msg.value == listingPrice, "Price must be equal to listing price");
+
+    _donationPoolIds.increment();
+    uint256 donationPoolId = _itemIds.current();
+    uint startTime = block.timestamp;
+    uint endTime = block.timestamp + votingPeriod;
+  
+    idToDonationPool[donationPoolId] =  DonationPool(
+      donationPoolId,
+      tokenId,
+      payable(msg.sender),
+      0,
+      0,
+      startTime,
+      votingPeriod,
+      endTime
+    );
+    
+    emit DonationPoolCreated(
+      donationPoolId,
+      tokenId,
+      msg.sender,
+      0,
+      0,
+      startTime,
+      votingPeriod,
+      endTime
+    );
+  }
+
   /* Creates the sale of a marketplace item */
   /* Transfers ownership of the item, as well as funds between parties */
   function createMarketSale(
@@ -117,7 +177,7 @@ contract NFTMarket is ReentrancyGuard {
     return items;
   }
 
-  /* Returns onlyl items that a user has purchased */
+  /* Returns only items that a user has purchased */
   function fetchMyNFTs() public view returns (MarketItem[] memory) {
     uint totalItemCount = _itemIds.current();
     uint itemCount = 0;
