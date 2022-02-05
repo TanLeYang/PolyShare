@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Link from 'next/link';
 import styled from "styled-components";
 import colors from "../constants/colors";
 import ethersService from "../services/ethersService";
@@ -22,10 +23,15 @@ function Marketplace({ Component, pageProps }) {
     );
 
   return (
-    <div>
+    <div className="bg-beigeC min-h-screen">
       <NavBar>
         <Title>PolyShare</Title>
         {renderAuthButton()}
+        <Link href="/ongoing-donations">
+          <a className="font-bold">
+            Ongoing Donation
+          </a>
+        </Link>
       </NavBar>
       <Component {...pageProps} />
     </div>
@@ -40,6 +46,7 @@ const NavBar = styled.nav`
   align-items: center;
   padding: 12px 20px;
   border-bottom: 1px solid ${colors.blue};
+  gap: 10px;
 `;
 
 const Title = styled.h1`
