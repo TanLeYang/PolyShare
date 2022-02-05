@@ -1,37 +1,62 @@
-import '../styles/globals.css'
-import Link from 'next/link'
+import { useState } from "react";
+import styled from "styled-components";
+import colors from "../constants/colors";
+import ethersService from "../services/ethersService";
+import "../styles/globals.css";
 
 function Marketplace({ Component, pageProps }) {
+  const [isAuthenticated, setAuthentication] = useState(false);
+
+  const authenticate = async () => {
+    await ethersService.authenticate();
+    setAuthentication(ethersService.isAuthenticated());
+  };
+
+  const renderAuthButton = () =>
+    isAuthenticated ? (
+      <Button>Connected</Button>
+    ) : (
+      <Button clickable onClick={authenticate}>
+        Connect
+      </Button>
+    );
+
   return (
     <div>
-      <nav className="border-b p-6">
-        <p className="text-4xl font-bold">Metaverse Marketplace</p>
-        <div className="flex mt-4">
-          <Link href="/">
-            <a className="mr-4 text-pink-500">
-              Home
-            </a>
-          </Link>
-          <Link href="/create-item">
-            <a className="mr-6 text-pink-500">
-              Sell Digital Asset
-            </a>
-          </Link>
-          <Link href="/my-assets">
-            <a className="mr-6 text-pink-500">
-              My Digital Assets
-            </a>
-          </Link>
-          <Link href="/creator-dashboard">
-            <a className="mr-6 text-pink-500">
-              Creator Dashboard
-            </a>
-          </Link>
-        </div>
-      </nav>
+      <NavBar>
+        <Title>PolyShare</Title>
+        {renderAuthButton()}
+      </NavBar>
       <Component {...pageProps} />
     </div>
-  )
+  );
 }
 
-export default Marketplace
+export default Marketplace;
+
+const NavBar = styled.nav`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid ${colors.blue};
+`;
+
+const Title = styled.h1`
+  font-size: 3rem;
+`;
+
+const Button = styled.button`
+  background-color: ${(props) =>
+    props.clickable ? colors.blue : colors.yellow};
+  color: ${(props) => (props.clickable ? "white" : "black")};
+  border-radius: 6px;
+  padding: 8px 20px;
+  margin-left: auto;
+  margin-right: 20px;
+
+  &:hover {
+    opacity: ${(props) => (props.clickable ? 0.6 : 1)};
+  }
+  transition: opacity 0.15s;
+`;
