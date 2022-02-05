@@ -28,12 +28,12 @@ function Marketplace({ Component, pageProps }) {
         <Title>PolyShare</Title>
         {renderAuthButton()}
         <Link href="/ongoing-donations">
-          <a className="font-bold bg-orangeC p-5 rounded-lg">
+          <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
             Ongoing Donation
           </a>
         </Link>
         <Link href="/contract-configs">
-          <a className="font-bold bg-orangeC p-5 rounded-lg">
+          <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
             Contract Configs
           </a>
         </Link>
@@ -68,6 +68,8 @@ const Button = styled.button`
   padding: 1.25rem;
   margin-left: auto;
   font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
 
   &:hover {
     opacity: ${(props) => (props.clickable ? 0.6 : 1)};
