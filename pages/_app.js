@@ -28,8 +28,13 @@ function Marketplace({ Component, pageProps }) {
         <Title>PolyShare</Title>
         {renderAuthButton()}
         <Link href="/ongoing-donations">
-          <a className="font-bold">
+          <a className="font-bold bg-orangeC p-5 rounded-lg">
             Ongoing Donation
+          </a>
+        </Link>
+        <Link href="/contract-configs">
+          <a className="font-bold bg-orangeC p-5 rounded-lg">
+            Contract Configs
           </a>
         </Link>
       </NavBar>
@@ -47,20 +52,22 @@ const NavBar = styled.nav`
   padding: 12px 20px;
   border-bottom: 1px solid ${colors.blue};
   gap: 10px;
+  background-color: #083D77
 `;
 
 const Title = styled.h1`
   font-size: 3rem;
+  color: white
 `;
 
 const Button = styled.button`
   background-color: ${(props) =>
-    props.clickable ? colors.blue : colors.yellow};
+    props.clickable ? colors.red : colors.orange};
   color: ${(props) => (props.clickable ? "white" : "black")};
   border-radius: 6px;
-  padding: 8px 20px;
+  padding: 1.25rem;
   margin-left: auto;
-  margin-right: 20px;
+  font-weight: 700;
 
   &:hover {
     opacity: ${(props) => (props.clickable ? 0.6 : 1)};
