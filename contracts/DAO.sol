@@ -12,6 +12,9 @@ contract DAOInterface {
     // Proposals to donate the DAO's ether
     Proposal[] public proposals;
 
+    // Maps orgId to
+    mapping(uint256 => bool) participatingOrgs;
+
     // Address of the curator
     address public curator;
 
@@ -83,15 +86,6 @@ contract DAOInterface {
     /// @return Whether the proposed transaction has been executed or not
     function executeProposal(uint256 _proposalID)
         public
-        returns (bool _success);
-
-    /// @notice Add a new possible recipient `_recipient` to the whitelist so
-    /// that the DAO can send transactions to them (using proposals)
-    /// @param _recipient New recipient address
-    /// @dev Can only be called by the current Curator
-    /// @return Whether successful or not
-    function changeAllowedRecipients(address _recipient, bool _allowed)
-        external
         returns (bool _success);
 
     /// @notice Change the minimum deposit required to submit a proposal
@@ -166,6 +160,9 @@ contract DAO is DAOInterface {
         p.proposalPassed = false;
         p.creator = msg.sender;
         p.proposalDeposit = msg.value;
+
+        allowedRecipients[_recipient] = true; // Add organization to allowedRecipients
+        participatingOrgs[_proposalID] = true; // Add orgId to participatingOrgs
 
         sumOfProposalDeposits += msg.value;
 
@@ -286,16 +283,6 @@ contract DAO is DAOInterface {
                 _proposalDeposit > (actualBalance()) / maxDepositDivisor
         );
         proposalDeposit = _proposalDeposit;
-    }
-
-    function changeAllowedRecipients(address _recipient, bool _allowed)
-        external
-        returns (bool _success)
-    {
-        require(msg.sender != curator);
-        allowedRecipients[_recipient] = _allowed;
-        AllowedRecipientChanged(_recipient, _allowed);
-        return true;
     }
 
     function actualBalance() internal view returns (uint256 _actualBalance) {
