@@ -11,7 +11,7 @@ contract Voting is Ownable {
     event VotingStarted(uint voteRoundId);
     event VotingEnded(uint voteRoundId);
     event VoteExecuted(uint voteRoundId, address recipient, uint totalAmount);
-    event AddOrganization(uint indexed pid, address orgWallet, string description, address proposer);
+    event AddOrganization(uint indexed pid, address orgWallet, string name, string description, address proposer);
 
     struct Vote {
         uint recipientOrg;
@@ -32,7 +32,7 @@ contract Voting is Ownable {
         address orgWallet;
         string orgName;
         string description;
-        address proposer; 
+        address proposer;
     }
 
     struct VotingRoundDetails {
@@ -53,7 +53,30 @@ contract Voting is Ownable {
     uint voteRoundCounter = 0;
     uint stagingPeriod = 3 days;
     uint votingPeriod = 1 weeks;
+    uint currentVoteRoundId = 0;
     mapping(uint => VotingRoundDetails) votingRounds;
+
+    function getVotingRoundDetails() view external returns(uint, uint, uint, bool, string memory, string memory) {
+        VotingRoundDetails storage currRound = votingRounds[currentVoteRoundId];
+        string memory currStage;
+        if (currRound.stage == VotingStage.STAGING) {
+            currStage = 'Staging';
+        } else if (currRound.stage == VotingStage.IN_PROGRESS) {
+            currStage = 'In Progress';
+        } else if (currRound.stage == VotingStage.ENDED) {
+            currStage = 'Ended';
+        } else if (currRound.stage == VotingStage.PAID_OUT) {
+            currStage = 'Paid Out';
+        }
+        return (
+            currRound.votingStart,
+            currRound.votingEnd,
+            currRound.totalVotesCast,
+            currRound.executed,
+            currRound.description,
+            currStage
+        );
+    }
 
     // Start a new round of voting, description can be used to describe the
     // category of organizations taking part, e.g "Animals" or "Elderly" (?)
@@ -61,6 +84,7 @@ contract Voting is Ownable {
     function newRound(string memory _description) external onlyOwner() {
         voteRoundCounter++;
         uint newRoundId = voteRoundCounter;
+        currentVoteRoundId = newRoundId;
         uint voteStartTime = block.timestamp + stagingPeriod;
 
         votingRounds[newRoundId].votingStart = voteStartTime;
@@ -72,7 +96,7 @@ contract Voting is Ownable {
     function registerOrg(uint _voteRoundId, uint _orgId) external onlyOwner() {
         require(votingRounds[_voteRoundId].stage == VotingStage.STAGING, "Orgs can only be registered during the staging period");
         votingRounds[_voteRoundId].orgs.push(_orgId);
-        votingRounds[_voteRoundId].participatingOrgs[_orgId] = true;    
+        votingRounds[_voteRoundId].participatingOrgs[_orgId] = true;
     }
 
     // TODO: How to accept donation?
@@ -109,7 +133,7 @@ contract Voting is Ownable {
             if (votingDetails.votesReceived[currOrg] > maxScore) {
                 winningOrgId = currOrg;
                 maxScore = votingDetails.votesReceived[currOrg];
-            } 
+            }
         }
 
         return winningOrgId;
@@ -128,14 +152,21 @@ contract Voting is Ownable {
         return votingRounds[_voteRoundId].participatingOrgs[_orgId];
     }
 
-    function addOrganization(address orgWallet, string orgName, string description) external nonDuplicated(orgWallet) {
+    modifier nonDuplicated(address _orgWallet) {
+        require(orgExistence[_orgWallet] == false, "Org wallet is duplicated");
+        _;
+    }
+
+    function addOrganization(address _orgWallet, string memory _orgName, string memory _description) external nonDuplicated(_orgWallet) {
         orgsInfo.push(
             OrgInfo({
+                orgId: orgsInfo.length,
                 orgWallet: _orgWallet,
                 orgName: _orgName,
                 description: _description,
                 proposer: msg.sender
             }));
-        orgExistence[orgWallet] = true;
-        emit AddOrganization(orgsInfo.length - 1, _orgWallet, _orgName, _description, msg.sender);
+        orgExistence[_orgWallet] = true;
+        emit AddOrganization(orgsInfo.length, _orgWallet, _orgName, _description, msg.sender);
     }
+}
