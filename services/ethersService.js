@@ -19,61 +19,57 @@ class EthersService {
     return !!this.signer;
   }
 
-  async getVotingResults() {
-    // TODO: actual blockchain call
-    // mock data:
-    return [
-      { option: "Red Cross", votes: 8 },
-      { option: "NKF", votes: 5 },
-      { option: "NKF2", votes: 2 },
-      { option: "NKF3", votes: 2 },
-      { option: "NKF4", votes: 0 },
-      { option: "NKF5", votes: 1 },
-    ];
+  getContract() {
+    if (!this.isAuthenticated()) throw new Error("No wallet connected.");
+    return new ethers.Contract(votingaddress, Voting.abi, this.signer);
   }
 
-  async submitVote(donationAmount, orgId) {
-    // TODO: actual blockchain call
+  async getVotingResults() {
+    const round = await this.getCurrentRound();
+    const allOrgs = await this.getAllOrgs();
+
+    // maps orgids to organization objects
+    const orgMap = {};
+    allOrgs.forEach((org) => {
+      orgMap[org.orgId.toNumber()] = org;
+    });
+
+    const [, , , , , , orgs, votes, roundId] = round;
+    const results = orgs.map((org, idx) => {
+      const orgId = org.toNumber();
+      const { orgName } = orgMap[orgId];
+      const numVotes = votes[idx].toNumber();
+      return {
+        option: orgName,
+        votes: numVotes,
+        orgId,
+      };
+    });
+
+    return { results, roundId: roundId.toNumber() };
+  }
+
+  async submitVote(roundId, amountInETH, orgId) {
+    const wei = ethers.utils.parseEther(amountInETH);
+    return this.getContract().vote(roundId, orgId, {
+      value: wei,
+    });
   }
 
   async addNewRound(description, orgs) {
-    if (!this.isAuthenticated()) throw new Error("No wallet connected.");
-    const votingContract = new ethers.Contract(
-      votingaddress,
-      Voting.abi,
-      this.signer
-    );
-    return votingContract.newRound(description, orgs);
+    return this.getContract().newRound(description, orgs);
   }
 
   async getCurrentRound() {
-    if (!this.isAuthenticated()) throw new Error("No wallet connected.");
-    const votingContract = new ethers.Contract(
-      votingaddress,
-      Voting.abi,
-      this.signer
-    );
-    return votingContract.getVotingRoundDetails();
+    return this.getContract().getVotingRoundDetails();
   }
 
   async addNewOrg({ name, address, description }) {
-    if (!this.isAuthenticated()) throw new Error("No wallet connected.");
-    const votingContract = new ethers.Contract(
-      votingaddress,
-      Voting.abi,
-      this.signer
-    );
-    return votingContract.addOrganization(address, name, description);
+    return this.getContract().addOrganization(address, name, description);
   }
 
   async getAllOrgs() {
-    if (!this.isAuthenticated()) throw new Error("No wallet connected.");
-    const votingContract = new ethers.Contract(
-      votingaddress,
-      Voting.abi,
-      this.signer
-    );
-    return votingContract.getOrgsInfo();
+    return this.getContract().getOrgsInfo();
   }
 }
 

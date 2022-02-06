@@ -2,9 +2,10 @@ pragma solidity ^0.8.1;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "prb-math/contracts/PRBMathUD60x18.sol";
+import "hardhat/console.sol";
 
 contract Voting is Ownable {
-     using PRBMathUD60x18 for uint256;
+    using PRBMathUD60x18 for uint256;
 
     // TODO: Emit these events
     event VoteCast(uint voteRoundId, address voter, uint orgId, uint weight);
@@ -64,7 +65,8 @@ contract Voting is Ownable {
         string memory,
         string memory,
         uint[] memory,
-        uint[] memory
+        uint[] memory,
+        uint
     ) {
         VotingRoundDetails storage currRound = votingRounds[currentVoteRoundId];
         string memory currStage;
@@ -85,7 +87,8 @@ contract Voting is Ownable {
             currRound.description,
             currStage,
             currRound.orgs,
-            compileVotesReceived(currRound)
+            compileVotesReceived(currRound),
+            currentVoteRoundId
         );
     }
 
@@ -111,7 +114,7 @@ contract Voting is Ownable {
         votingRounds[newRoundId].votingStart = voteStartTime;
         votingRounds[newRoundId].votingEnd = voteStartTime + votingPeriod;
         votingRounds[newRoundId].description = _description;
-        votingRounds[newRoundId].stage = VotingStage.STAGING;
+        votingRounds[newRoundId].stage = VotingStage.IN_PROGRESS;
         votingRounds[newRoundId].orgs = _orgIds;
 
         for (uint i = 0; i < _orgIds.length; i++) {
@@ -121,7 +124,7 @@ contract Voting is Ownable {
         }
     }
 
-    // DEPRECATED? Owner should specify a list of orgs when creating the round.
+    // DEPRECATED? Owner should specify a list of orgs when creating the round since we're skipping staging.
     function registerOrg(uint _voteRoundId, uint _orgId) external onlyOwner() {
         require(votingRounds[_voteRoundId].stage == VotingStage.STAGING, "Orgs can only be registered during the staging period");
         votingRounds[_voteRoundId].orgs.push(_orgId);
@@ -138,10 +141,15 @@ contract Voting is Ownable {
 
         VotingRoundDetails storage currRound = votingRounds[_voteRoundId];
 
-        uint voteWeight = (2 * msg.value).sqrt(); // quadratic voting
+        /* fkin give up on quadratic voting cos idk how to use the library's sqrt */
+        // uint voteWeight = (2 * (msg.value / conversionFactor)).sqrt(); // quadratic voting
+
+        uint conversionFactor = 10 ** 15; // convert wei to units of 0.001 ether (not 1 ether)
+        // That means 1 vote costs 0.001 ETH, which is somewhat reasonable
+        uint voteWeight = msg.value / conversionFactor;
         currRound.userVotes[msg.sender] = Vote(_orgId, voteWeight, true);
         currRound.votesReceived[_orgId] += voteWeight;
-        currRound.totalVotesCast++;
+        currRound.totalVotesCast += voteWeight;
     }
 
     function executeVotingRound(uint _voteRoundId) external view returns(bool) {

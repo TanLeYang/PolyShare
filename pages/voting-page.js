@@ -4,53 +4,68 @@ import colors from "../constants/colors";
 import ethersService from "../services/ethersService";
 import Poll from "react-polls";
 
-let rpcEndpoint = null;
-
-if (process.env.NEXT_PUBLIC_WORKSPACE_URL) {
-  rpcEndpoint = process.env.NEXT_PUBLIC_WORKSPACE_URL;
-}
-
 export default function VotingPage() {
   const [donationAmt, setDonationAmt] = useState("0.0");
-  const [pollResults, setPollResults] = useState([]);
+  const [roundId, setRoundId] = useState();
+  const [votingResults, setVotingResults] = useState([]);
+  const [hasVoted, setHasVoted] = useState(false);
 
   useEffect(() => {
     ethersService
       .getVotingResults()
-      .then((results) => setPollResults(results))
+      .then((response) => {
+        console.log("voting results:", response);
+        setVotingResults(response.results);
+        setRoundId(response.roundId);
+      })
       .catch((error) => {
         // yolo error handling
         console.error(error);
       });
   }, []);
 
+  /* Give up on quadratic voting cos doing sqrt in solidity is a bitch */
+  // const ethToVotes = (eth) =>
+  //   isNaN(parseFloat(eth))
+  //     ? 0
+  //     : Math.floor(Math.sqrt(2 * parseFloat(eth) * 1000));
+
   const ethToVotes = (eth) =>
-    isNaN(parseFloat(eth)) ? 0 : Math.floor(Math.sqrt(2 * parseFloat(eth)));
+    isNaN(parseFloat(eth)) || parseFloat(eth) < 0.001
+      ? 0
+      : parseFloat(eth) * 1000;
+
+  const orgNameToId = (orgName) =>
+    votingResults.find((x) => x.option === orgName).orgId;
 
   const handleDonationAmtChange = (event) => {
     // TODO: sanitize input
     setDonationAmt(event.target.value);
   };
 
-  const handleVote = (vote) => {
-    ethersService.submitVote(donationAmt, vote);
-    const newPollResults = pollResults.map((answer) => {
-      if (answer.option === vote) {
-        answer.votes += ethToVotes(donationAmt); // quadratic voting
-      }
-      return answer;
-    });
-    setPollResults(newPollResults);
-    // TODO: show a message with the transaction ID or etherscan link
+  const handleVote = async (vote) => {
+    try {
+      await ethersService.submitVote(roundId, donationAmt, orgNameToId(vote));
+      setHasVoted(true);
+      const newResults = votingResults.map((org) => {
+        if (org.option === vote) {
+          org.votes += ethToVotes(donationAmt); // quadratic voting
+        }
+        return org;
+      });
+      setVotingResults(newResults);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
     <Container>
       <VoteInput>
-        <InputLabel>Amount to stake (ETH):</InputLabel>
+        <InputLabel>Amount to donate (ETH):</InputLabel>
         <Input value={donationAmt} onChange={handleDonationAmtChange} />
         <VoteFootNote>
-          {`Equivalent # of Votes (quadratic voting): ${ethToVotes(
+          {`Equivalent # of votes (0.001 ETH per vote): ${ethToVotes(
             donationAmt
           )}`}
         </VoteFootNote>
@@ -58,10 +73,18 @@ export default function VotingPage() {
       <PollContainer>
         <Poll
           question="Beneficiaries"
-          answers={pollResults}
+          answers={votingResults}
           onVote={handleVote}
           customStyles={{ align: "center", theme: "blue" }}
         />
+        {hasVoted && (
+          <PollSuccessMessage>
+            {`
+          You've successfully sent a voting transaction. Kindly track the
+          mining status in your MetaMask wallet.
+          `}
+          </PollSuccessMessage>
+        )}
       </PollContainer>
     </Container>
   );
@@ -89,6 +112,7 @@ const InputLabel = styled.label`
 
 const VoteFootNote = styled.p`
   text-align: center;
+  margin-top: 8px;
 `;
 
 const Input = styled.input`
@@ -105,4 +129,9 @@ const PollContainer = styled.div`
   border-radius: 8px;
   overflow-y: auto;
   padding: 30px 20px;
+`;
+
+const PollSuccessMessage = styled.p`
+  text-align: center;
+  color: ${colors.red};
 `;
