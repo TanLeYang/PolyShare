@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Link from 'next/link';
+import Link from "next/link";
 import styled from "styled-components";
 import colors from "../constants/colors";
 import ethersService from "../services/ethersService";
@@ -25,7 +25,9 @@ function Marketplace({ Component, pageProps }) {
   return (
     <div className="bg-beigeC min-h-screen">
       <NavBar>
-        <Title>PolyShare</Title>
+        <Link href="/">
+          <Title>PolyShare</Title>
+        </Link>
         {renderAuthButton()}
         <Link href="/ongoing-donations">
           <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
@@ -52,12 +54,13 @@ const NavBar = styled.nav`
   padding: 12px 20px;
   border-bottom: 1px solid ${colors.blue};
   gap: 10px;
-  background-color: #083D77
+  background-color: #083d77;
 `;
 
 const Title = styled.h1`
   font-size: 3rem;
-  color: white
+  color: white;
+  cursor: pointer;
 `;
 
 const Button = styled.button`
