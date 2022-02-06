@@ -8,13 +8,20 @@ import "../styles/globals.css";
 
 function App({ Component, pageProps }) {
   const [isAuthenticated, setAuthentication] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const router = useRouter();
 
-  // prevents users from refreshing the page and accessing protected routes
-  // without connecting wallet first
   useEffect(() => {
+    // prevents users from refreshing the page and accessing protected routes
+    // without connecting wallet first
     if (!isAuthenticated) {
       router.push("/");
+    } else {
+      // if user is connected, determine if we should show privileged pages
+      ethersService
+        .isUserTheOwner()
+        .then((bool) => setIsOwner(bool))
+        .catch((e) => console.error(e));
     }
   }, [isAuthenticated]);
 
@@ -51,11 +58,13 @@ function App({ Component, pageProps }) {
                 Current Voting Round
               </a>
             </Link>
-            <Link href="/contract-configs">
-              <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
-                Contract Configs
-              </a>
-            </Link>
+            {isOwner && (
+              <Link href="/contract-configs">
+                <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
+                  Contract Configs
+                </a>
+              </Link>
+            )}
           </>
         )}
       </NavBar>

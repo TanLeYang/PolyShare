@@ -71,6 +71,12 @@ class EthersService {
   async getAllOrgs() {
     return this.getContract().getOrgsInfo();
   }
+
+  async isUserTheOwner() {
+    const ownerAddr = await this.getContract().owner();
+    const userAddr = await this.signer.getAddress();
+    return userAddr === ownerAddr;
+  }
 }
 
 const singleton = new EthersService();
