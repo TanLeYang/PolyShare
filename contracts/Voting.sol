@@ -167,6 +167,22 @@ contract Voting is Ownable {
         return true;
     }
 
+    function getWinningOrg(uint _voteRoundId) external view returns(bool, OrgInfo memory) {
+        VotingRoundDetails storage voteRound = votingRounds[_voteRoundId];
+        if (voteRound.stage != VotingStage.PAID_OUT) {
+            return (false, orgsInfo[0]); // just return a random org, too lazy to find a cleaner way
+        }
+
+        uint winningOrgId = _getMostVotedOrg(_voteRoundId);
+        for (uint i = 0; i < orgsInfo.length; i++) {
+            if (orgsInfo[i].orgId == winningOrgId) {
+                return (true, orgsInfo[i]);
+            }
+        }
+
+        return (false, orgsInfo[0]); // just return a random org, too lazy to find a cleaner way
+    } 
+
     function _getMostVotedOrg(uint _voteRoundId) private view returns(uint) {
         VotingRoundDetails storage votingDetails = votingRounds[_voteRoundId];
         uint winningOrgId;
