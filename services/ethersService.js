@@ -55,6 +55,16 @@ class EthersService {
     );
     return votingContract.getVotingRoundDetails();
   }
+
+  async addNewOrg({ name, address, description }) {
+    if (!this.isAuthenticated()) throw new Error("No wallet connected.");
+    const votingContract = new ethers.Contract(
+      votingaddress,
+      Voting.abi,
+      this.signer
+    );
+    return votingContract.addOrganization(address, name, description);
+  }
 }
 
 const singleton = new EthersService();
