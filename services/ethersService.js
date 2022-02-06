@@ -1,6 +1,9 @@
 import Web3Modal from "web3modal";
 import { ethers } from "ethers";
 
+import Voting from "../artifacts/contracts/Voting.sol/Voting.json";
+import { votingaddress } from "../config";
+
 class EthersService {
   provider;
   signer;
@@ -31,6 +34,15 @@ class EthersService {
 
   async submitVote(donationAmount, orgId) {
     // TODO: actual blockchain call
+  }
+
+  async addNewRound(description) {
+    const votingContract = new ethers.Contract(
+      votingaddress,
+      Voting.abi,
+      this.signer
+    );
+    return votingContract.newRound(description);
   }
 }
 
