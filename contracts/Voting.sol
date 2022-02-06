@@ -11,6 +11,7 @@ contract Voting is Ownable {
     event VotingStarted(uint voteRoundId);
     event VotingEnded(uint voteRoundId);
     event VoteExecuted(uint voteRoundId, address recipient, uint totalAmount);
+    event AddOrganization(uint indexed pid, address orgWallet, string description, address proposer);
 
     struct Vote {
         uint recipientOrg;
@@ -26,6 +27,14 @@ contract Voting is Ownable {
         PAID_OUT
     }
 
+    struct OrgInfo {
+        uint orgId;
+        address orgWallet;
+        string orgName;
+        string description;
+        address proposer; 
+    }
+
     struct VotingRoundDetails {
         uint votingStart;
         uint votingEnd;
@@ -39,6 +48,8 @@ contract Voting is Ownable {
         mapping(address => Vote) userVotes;
     }
 
+    OrgInfo[] public orgsInfo; // Public so that info can be queried.
+    mapping(address => bool) public orgExistence; // Public so that info can be queried.
     uint voteRoundCounter = 0;
     uint stagingPeriod = 3 days;
     uint votingPeriod = 1 weeks;
@@ -85,7 +96,7 @@ contract Voting is Ownable {
     function registerOrg(uint _voteRoundId, uint _orgId) external onlyOwner() {
         require(votingRounds[_voteRoundId].stage == VotingStage.STAGING, "Orgs can only be registered during the staging period");
         votingRounds[_voteRoundId].orgs.push(_orgId);
-        votingRounds[_voteRoundId].participatingOrgs[_orgId] = true;
+        votingRounds[_voteRoundId].participatingOrgs[_orgId] = true;    
     }
 
     // TODO: How to accept donation?
@@ -140,4 +151,15 @@ contract Voting is Ownable {
     function _isValidOrg(uint _voteRoundId, uint _orgId) private view returns(bool) {
         return votingRounds[_voteRoundId].participatingOrgs[_orgId];
     }
-}
+
+    function addOrganization(address orgWallet, string orgName, string description) external nonDuplicated(orgWallet) {
+        orgsInfo.push(
+            OrgInfo({
+                orgWallet: _orgWallet,
+                orgName: _orgName,
+                description: _description,
+                proposer: msg.sender
+            }));
+        orgExistence[orgWallet] = true;
+        emit AddOrganization(orgsInfo.length - 1, _orgWallet, _orgName, _description, msg.sender);
+    }
