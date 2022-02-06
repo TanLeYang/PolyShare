@@ -91,10 +91,10 @@ contract Voting is Ownable {
 
     // helper fn to convert VotingRoundDetails.votesRecevied into an indexable array to return
     function compileVotesReceived(VotingRoundDetails storage _round) internal view returns (uint[] memory) {
-        uint[] memory votesReceived;
+        uint[] memory votesReceived = new uint[](_round.orgs.length);
         for (uint i = 0; i < _round.orgs.length; i++) {
             uint orgId = _round.orgs[i];
-            votesReceived[orgId] = _round.votesReceived[orgId];
+            votesReceived[i] = _round.votesReceived[orgId];
         }
         return votesReceived;
     }
@@ -102,7 +102,7 @@ contract Voting is Ownable {
     // Start a new round of voting, description can be used to describe the
     // category of organizations taking part, e.g "Animals" or "Elderly" (?)
     // For now only owner can start a new round
-    function newRound(string memory _description) external onlyOwner() {
+    function newRound(string memory _description, uint[] memory _orgIds) external onlyOwner() {
         voteRoundCounter++;
         uint newRoundId = voteRoundCounter;
         currentVoteRoundId = newRoundId;
@@ -112,8 +112,16 @@ contract Voting is Ownable {
         votingRounds[newRoundId].votingEnd = voteStartTime + votingPeriod;
         votingRounds[newRoundId].description = _description;
         votingRounds[newRoundId].stage = VotingStage.STAGING;
+        votingRounds[newRoundId].orgs = _orgIds;
+
+        for (uint i = 0; i < _orgIds.length; i++) {
+            uint orgId = _orgIds[i];
+            votingRounds[newRoundId].participatingOrgs[orgId] = true;
+            votingRounds[newRoundId].votesReceived[orgId] = 0;
+        }
     }
 
+    // DEPRECATED? Owner should specify a list of orgs when creating the round.
     function registerOrg(uint _voteRoundId, uint _orgId) external onlyOwner() {
         require(votingRounds[_voteRoundId].stage == VotingStage.STAGING, "Orgs can only be registered during the staging period");
         votingRounds[_voteRoundId].orgs.push(_orgId);
