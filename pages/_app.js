@@ -1,12 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import styled from "styled-components";
 import colors from "../constants/colors";
 import ethersService from "../services/ethersService";
 import "../styles/globals.css";
 
-function Marketplace({ Component, pageProps }) {
+function App({ Component, pageProps }) {
   const [isAuthenticated, setAuthentication] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // prevents users from refreshing the page and accessing protected routes
+    // without connecting wallet first
+    if (!isAuthenticated) {
+      router.push("/");
+    } else {
+      // if user is connected, determine if we should show privileged pages
+      ethersService
+        .isUserTheOwner()
+        .then((bool) => setIsOwner(bool))
+        .catch((e) => console.error(e));
+    }
+  }, [isAuthenticated]);
 
   const authenticate = async () => {
     await ethersService.authenticate();
@@ -29,23 +46,34 @@ function Marketplace({ Component, pageProps }) {
           <Title>PolyShare</Title>
         </Link>
         {renderAuthButton()}
-        <Link href="/ongoing-donations">
-          <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
-            Ongoing Donation
-          </a>
-        </Link>
-        <Link href="/contract-configs">
-          <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
-            Contract Configs
-          </a>
-        </Link>
+        {isAuthenticated && (
+          <>
+            <Link href="/voting-page">
+              <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
+                Vote Now
+              </a>
+            </Link>
+            <Link href="/current-round">
+              <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
+                Current Voting Round
+              </a>
+            </Link>
+            {isOwner && (
+              <Link href="/contract-configs">
+                <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
+                  Contract Configs
+                </a>
+              </Link>
+            )}
+          </>
+        )}
       </NavBar>
       <Component {...pageProps} />
     </div>
   );
 }
 
-export default Marketplace;
+export default App;
 
 const NavBar = styled.nav`
   width: 100%;
@@ -58,15 +86,14 @@ const NavBar = styled.nav`
 `;
 
 const Title = styled.h1`
-  font-size: 3rem;
+  font-size: 2rem;
   color: white;
   cursor: pointer;
 `;
 
 const Button = styled.button`
-  background-color: ${(props) =>
-    props.clickable ? colors.red : colors.orange};
-  color: ${(props) => (props.clickable ? "white" : "black")};
+  background-color: ${(props) => (props.clickable ? colors.red : colors.blue)};
+  color: white;
   border-radius: 6px;
   padding: 1.25rem;
   margin-left: auto;
@@ -75,7 +102,7 @@ const Button = styled.button`
   line-height: 1.75rem;
 
   &:hover {
-    opacity: ${(props) => (props.clickable ? 0.6 : 1)};
+    opacity: ${(props) => (props.clickable ? 0.8 : 1)};
   }
   transition: opacity 0.15s;
 `;
