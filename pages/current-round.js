@@ -44,14 +44,14 @@ const CurrentRound = () => {
     ] = roundDetails;
 
     const executeRound = () => {
-      // const timeNow = new Date().getTime();
-      // if (votingEnd.toNumber() * 1000 > timeNow) {
-      //   setShowWarning(true);
-      //   setTimeout(() => {
-      //     setShowWarning(false);
-      //   }, 3000)
-      //   return;
-      // }  
+      const timeNow = new Date().getTime();
+      if (votingEnd.toNumber() * 1000 > timeNow) {
+        setShowWarning(true);
+        setTimeout(() => {
+          setShowWarning(false);
+        }, 3000)
+        return;
+      }  
 
       ethersService
         .executeVoteRound(roundId)
