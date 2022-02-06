@@ -137,7 +137,6 @@ contract Voting is Ownable {
         require(votingRounds[_voteRoundId].stage == VotingStage.IN_PROGRESS, "Votes can only be cast if voting is still in progress");
         require(_canVote(_voteRoundId, msg.sender), "User not allowed to vote in this round");
         require(_isValidOrg(_voteRoundId, _orgId), "Not a valid organization id");
-        require(_hasNotVoted(_voteRoundId, msg.sender), "User has already voted before");
 
         VotingRoundDetails storage currRound = votingRounds[_voteRoundId];
 
