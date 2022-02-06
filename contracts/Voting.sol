@@ -190,4 +190,8 @@ contract Voting is Ownable {
         orgExistence[_orgWallet] = true;
         emit AddOrganization(orgsInfo.length, _orgWallet, _orgName, _description, msg.sender);
     }
+
+    function getOrgsInfo() external view returns (OrgInfo[] memory) {
+        return orgsInfo;
+    }
 }
