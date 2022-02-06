@@ -6,11 +6,13 @@ import {
   Header,
   SubHeader,
   BodyContainer,
+  Button,
 } from "../constants/styledTags";
 import ethersService from "../services/ethersService";
 
 const CurrentRound = () => {
   const [roundDetails, setRoundDetails] = useState([]);
+  const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     ethersService
@@ -34,7 +36,24 @@ const CurrentRound = () => {
       executed,
       description,
       currStage,
+      ,
+      ,
+      roundId
     ] = roundDetails;
+
+    const executeRound = () => {
+      const timeNow = new Date().getTime();
+      if (votingEnd.toNumber() * 1000 > timeNow) {
+        setShowWarning(true);
+        setTimeout(() => {
+          setShowWarning(false);
+        }, 3000)
+        return;
+      }  
+
+      ethersService.executeVoteRound(roundId);
+    }
+
     return (
       <CardContainer>
         <Header>{description}</Header>
@@ -49,6 +68,17 @@ const CurrentRound = () => {
           {/* <SubHeader>Your Donated Amount (ETH):</SubHeader> */}
           {/* <SubHeader>Your Vote Weight (%):</SubHeader> */}
         </BodyContainer>
+        <Button
+          className="mt-4"
+          onClick={executeRound}
+        >
+          Execute Round 
+        </Button>
+        { showWarning && (
+          <h3 className="text-red-400 text-lg">
+            Voting is still going on, cast your votes now! 
+          </h3>
+        )}
       </CardContainer>
     );
   };

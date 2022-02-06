@@ -56,6 +56,10 @@ class EthersService {
     });
   }
 
+  async executeVoteRound(roundId) {
+    return this.getContract().executeVoteRound(roundId);
+  }
+
   async addNewRound(description, orgs) {
     return this.getContract().newRound(description, orgs);
   }
