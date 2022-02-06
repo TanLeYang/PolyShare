@@ -56,7 +56,16 @@ contract Voting is Ownable {
     uint currentVoteRoundId = 0;
     mapping(uint => VotingRoundDetails) votingRounds;
 
-    function getVotingRoundDetails() view external returns(uint, uint, uint, bool, string memory, string memory) {
+    function getVotingRoundDetails() view external returns(
+        uint,
+        uint,
+        uint,
+        bool,
+        string memory,
+        string memory,
+        uint[] memory,
+        uint[] memory
+    ) {
         VotingRoundDetails storage currRound = votingRounds[currentVoteRoundId];
         string memory currStage;
         if (currRound.stage == VotingStage.STAGING) {
@@ -74,8 +83,20 @@ contract Voting is Ownable {
             currRound.totalVotesCast,
             currRound.executed,
             currRound.description,
-            currStage
+            currStage,
+            currRound.orgs,
+            compileVotesReceived(currRound)
         );
+    }
+
+    // helper fn to convert VotingRoundDetails.votesRecevied into an indexable array to return
+    function compileVotesReceived(VotingRoundDetails storage _round) internal view returns (uint[] memory) {
+        uint[] memory votesReceived;
+        for (uint i = 0; i < _round.orgs.length; i++) {
+            uint orgId = _round.orgs[i];
+            votesReceived[orgId] = _round.votesReceived[orgId];
+        }
+        return votesReceived;
     }
 
     // Start a new round of voting, description can be used to describe the
