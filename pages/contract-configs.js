@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import styled from "styled-components";
 import {
   InputField,
   CardContainer,
@@ -7,15 +8,32 @@ import {
   BodyContainer,
   Button,
 } from "../constants/styledTags";
+import Select from "react-select";
 import ethersService from "../services/ethersService";
 
-export default function CreateItem() {
+export default function ContractConfigs() {
+  const [orgs, setOrgs] = useState([]);
+  const [selectedOrgs, setSelectedOrgs] = useState([]);
   const [formInput, updateFormInput] = useState({
     name: "",
     address: "",
     description: "",
   });
   const [newRoundDescription, setDescription] = useState("");
+
+  useEffect(() => {
+    fetchOrgs();
+  }, []);
+
+  const fetchOrgs = () => {
+    ethersService
+      .getAllOrgs()
+      .then((orgs) => {
+        console.log("ORGS: ", orgs);
+        setOrgs(orgs);
+      })
+      .catch((e) => console.error(e));
+  };
 
   const AddOrgCard = () => {
     return (
@@ -66,6 +84,14 @@ export default function CreateItem() {
               placeholder="Input Description"
               onChange={(e) => setDescription(e.target.value)}
             />
+            <SubHeader>Voting Round Beneficiaries</SubHeader>
+            <Select
+              value={selectedOrgs}
+              isMulti
+              options={getOrgOptions()}
+              onChange={setSelectedOrgs}
+            />
+            <Refresh onClick={fetchOrgs}>Refresh</Refresh>
             <Button clickable onClick={submitNewRound}>
               Start Round
             </Button>
@@ -75,9 +101,16 @@ export default function CreateItem() {
     );
   };
 
+  const getOrgOptions = () =>
+    orgs.map((org) => ({ value: org.orgId.toNumber(), label: org.orgName }));
+
   const submitNewRound = async () => {
     try {
-      const response = await ethersService.addNewRound(newRoundDescription);
+      const selectedOrgIds = selectedOrgs.map((org) => org.value);
+      const response = await ethersService.addNewRound(
+        newRoundDescription,
+        selectedOrgIds
+      );
       console.log("Created a new round!", response);
     } catch (e) {
       console.error(e);
@@ -102,3 +135,10 @@ export default function CreateItem() {
     </div>
   );
 }
+
+const Refresh = styled.a`
+  font-size: 0.75rem;
+  margin-top: -15px;
+  cursor: pointer;
+  text-decoration: underline;
+`;

@@ -9,7 +9,7 @@ import {
 } from "../constants/styledTags";
 import ethersService from "../services/ethersService";
 
-const CreatePool = () => {
+const CurrentRound = () => {
   const [roundDetails, setRoundDetails] = useState([]);
 
   useEffect(() => {
@@ -22,8 +22,7 @@ const CreatePool = () => {
       .catch((e) => console.error(e));
   }, []);
 
-  const unixEpochToDateString = (epoch) =>
-    new Date(epoch * 1000).toLocaleTimeString();
+  const unixEpochToDateString = (epoch) => new Date(epoch * 1000).toUTCString();
 
   const DonationCard = () => {
     if (!roundDetails.length) return null;
@@ -63,4 +62,4 @@ const CreatePool = () => {
   );
 };
 
-export default CreatePool;
+export default CurrentRound;

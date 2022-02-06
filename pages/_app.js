@@ -29,9 +29,9 @@ function Marketplace({ Component, pageProps }) {
           <Title>PolyShare</Title>
         </Link>
         {renderAuthButton()}
-        <Link href="/ongoing-donations">
+        <Link href="/current-round">
           <a className="font-bold bg-orangeC p-5 rounded-lg text-lg">
-            Ongoing Donation
+            Current Voting Round
           </a>
         </Link>
         <Link href="/contract-configs">
