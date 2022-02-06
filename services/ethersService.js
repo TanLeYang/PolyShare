@@ -68,6 +68,10 @@ class EthersService {
     return this.getContract().getVotingRoundDetails();
   }
 
+  async getRoundWinner(roundId) {
+    return this.getContract().getWinningOrg(roundId);
+  }
+
   async addNewOrg({ name, address, description }) {
     return this.getContract().addOrganization(address, name, description);
   }
