@@ -30,7 +30,7 @@ contract Voting is Ownable {
 
     struct OrgInfo {
         uint orgId;
-        address orgWallet;
+        address payable orgWallet;
         string orgName;
         string description;
         address proposer;
@@ -134,11 +134,15 @@ contract Voting is Ownable {
     // TODO: How to accept donation?
     // Make the vote function itself payable? make user exchange for token?
     function vote(uint _voteRoundId, uint _orgId) payable external {
-        require(votingRounds[_voteRoundId].stage == VotingStage.IN_PROGRESS, "Votes can only be cast if voting is still in progress");
+        VotingRoundDetails storage currRound = votingRounds[_voteRoundId];
+
+        if (block.timestamp > currRound.votingEnd) {
+            votingRounds[_voteRoundId].stage = VotingStage.ENDED;
+        }
+        require(currRound.stage == VotingStage.IN_PROGRESS, "Votes can only be cast if voting is still in progress");
         require(_canVote(_voteRoundId, msg.sender), "User not allowed to vote in this round");
         require(_isValidOrg(_voteRoundId, _orgId), "Not a valid organization id");
 
-        VotingRoundDetails storage currRound = votingRounds[_voteRoundId];
 
         /* fkin give up on quadratic voting cos idk how to use the library's sqrt */
         // uint voteWeight = (2 * (msg.value / conversionFactor)).sqrt(); // quadratic voting
@@ -151,12 +155,15 @@ contract Voting is Ownable {
         currRound.totalVotesCast += voteWeight;
     }
 
-    function executeVotingRound(uint _voteRoundId) external view returns(bool) {
+    function executeVotingRound(uint _voteRoundId) external returns(bool) {
         VotingRoundDetails storage voteRound = votingRounds[_voteRoundId];
-        require(voteRound.stage == VotingStage.ENDED, "Can only execute after a voting round has ended");
+        require(block.timestamp > voteRound.votingEnd, "Can only execute contract after voting has ended");
 
         uint winningOrg = _getMostVotedOrg(_voteRoundId);
-        // TODO: Send the payment here
+        address payable winningOrgAddr = orgsInfo[winningOrg].orgWallet;
+        winningOrgAddr.transfer(address(this).balance);
+        voteRound.stage = VotingStage.PAID_OUT;
+        
         return true;
     }
 
@@ -193,7 +200,7 @@ contract Voting is Ownable {
         _;
     }
 
-    function addOrganization(address _orgWallet, string memory _orgName, string memory _description) external nonDuplicated(_orgWallet) {
+    function addOrganization(address payable _orgWallet, string memory _orgName, string memory _description) external nonDuplicated(_orgWallet) {
         orgsInfo.push(
             OrgInfo({
                 orgId: orgsInfo.length,
