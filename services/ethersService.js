@@ -57,7 +57,7 @@ class EthersService {
   }
 
   async executeVoteRound(roundId) {
-    return this.getContract().executeVoteRound(roundId);
+    return this.getContract().executeVotingRound(roundId);
   }
 
   async addNewRound(description, orgs) {
