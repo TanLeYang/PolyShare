@@ -16,7 +16,7 @@ class EthersService {
   }
 
   isAuthenticated() {
-    return !!this.provider;
+    return !!this.signer;
   }
 
   async getVotingResults() {
@@ -37,12 +37,23 @@ class EthersService {
   }
 
   async addNewRound(description) {
+    if (!this.isAuthenticated()) throw new Error("No wallet connected.");
     const votingContract = new ethers.Contract(
       votingaddress,
       Voting.abi,
       this.signer
     );
     return votingContract.newRound(description);
+  }
+
+  async getCurrentRound() {
+    if (!this.isAuthenticated()) throw new Error("No wallet connected.");
+    const votingContract = new ethers.Contract(
+      votingaddress,
+      Voting.abi,
+      this.signer
+    );
+    return votingContract.getVotingRoundDetails();
   }
 }
 

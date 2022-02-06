@@ -1,50 +1,54 @@
-import { useState } from 'react'
-import { ethers } from 'ethers'
-import { create as ipfsHttpClient } from 'ipfs-http-client'
-import { useRouter } from 'next/router'
-import Web3Modal from 'web3modal'
-import styled from 'styled-components'
-import colors from "../constants/colors";
+import { useState, useEffect } from "react";
+// import styled from "styled-components";
+// import colors from "../constants/colors";
 import {
-  InputField,
   CardContainer,
   Header,
   SubHeader,
   BodyContainer,
-  Button,
 } from "../constants/styledTags";
-
-const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
-
-import Voting from '../artifacts/contracts/Voting.sol/Voting.json'
+import ethersService from "../services/ethersService";
 
 const CreatePool = () => {
-  const [fileUrl, setFileUrl] = useState(null);
-  const [formInput, updateFormInput] = useState({
-    price: "",
-    name: "",
-    description: "",
-  });
-  const router = useRouter();
+  const [roundDetails, setRoundDetails] = useState([]);
+
+  useEffect(() => {
+    ethersService
+      .getCurrentRound()
+      .then((round) => {
+        console.log("ROUND: ", round);
+        setRoundDetails(round);
+      })
+      .catch((e) => console.error(e));
+  }, []);
+
+  const unixEpochToDateString = (epoch) =>
+    new Date(epoch * 1000).toLocaleTimeString();
 
   const DonationCard = () => {
-    // TODO: Get actual donation details from contract
+    if (!roundDetails.length) return null;
+
+    const [
+      votingStart,
+      votingEnd,
+      totalVotesCast,
+      executed,
+      description,
+      currStage,
+    ] = roundDetails;
     return (
       <CardContainer>
-        <Header>Sam's XMM Cafe Fund</Header>
+        <Header>{description}</Header>
         <BodyContainer>
-          <SubHeader>Start Time:</SubHeader>
-          <SubHeader>End Time:</SubHeader>
-          <SubHeader>Current Pool Value (ETH):</SubHeader>
-          <SubHeader>Your Donated Amount (ETH):</SubHeader>
-          <SubHeader>Your Vote Weight (%):</SubHeader>
-          <InputField
-            placeholder="Enter Amount to Donate"
-            onChange={(e) =>
-              updateFormInput({ ...formInput, name: e.target.value })
-            }
-          />
-          <Button clickable>Submit Donation</Button>
+          <SubHeader>
+            Start Time: {unixEpochToDateString(votingStart.toNumber())}
+          </SubHeader>
+          <SubHeader>
+            End Time: {unixEpochToDateString(votingEnd.toNumber())}
+          </SubHeader>
+          <SubHeader>{`Total Votes Cast: ${totalVotesCast.toString()}`}</SubHeader>
+          {/* <SubHeader>Your Donated Amount (ETH):</SubHeader> */}
+          {/* <SubHeader>Your Vote Weight (%):</SubHeader> */}
         </BodyContainer>
       </CardContainer>
     );
