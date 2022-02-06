@@ -10,6 +10,7 @@ contract Voting is Ownable {
     event VoteCast(uint voteRoundId, address voter, uint orgId, uint weight);
     event VotingStarted(uint voteRoundId);
     event VotingEnded(uint voteRoundId);
+    event VoteExecuted(uint voteRoundId, address recipient, uint totalAmount);
 
     struct Vote {
         uint recipientOrg;
@@ -32,7 +33,9 @@ contract Voting is Ownable {
         bool executed;
         string description;
         VotingStage stage;
+        uint[] orgs;
         mapping(uint => bool) participatingOrgs;
+        mapping(uint => uint) votesReceived;
         mapping(address => Vote) userVotes;
     }
 
@@ -81,6 +84,7 @@ contract Voting is Ownable {
 
     function registerOrg(uint _voteRoundId, uint _orgId) external onlyOwner() {
         require(votingRounds[_voteRoundId].stage == VotingStage.STAGING, "Orgs can only be registered during the staging period");
+        votingRounds[_voteRoundId].orgs.push(_orgId);
         votingRounds[_voteRoundId].participatingOrgs[_orgId] = true;
     }
 
@@ -96,7 +100,32 @@ contract Voting is Ownable {
 
         uint voteWeight = (2 * msg.value).sqrt(); // quadratic voting
         currRound.userVotes[msg.sender] = Vote(_orgId, voteWeight, true);
+        currRound.votesReceived[_orgId] += voteWeight;
         currRound.totalVotesCast++;
+    }
+
+    function executeVotingRound(uint _voteRoundId) external view returns(bool) {
+        VotingRoundDetails storage voteRound = votingRounds[_voteRoundId];
+        require(voteRound.stage == VotingStage.ENDED, "Can only execute after a voting round has ended");
+
+        uint winningOrg = _getMostVotedOrg(_voteRoundId);
+        // TODO: Send the payment here
+        return true;
+    }
+
+    function _getMostVotedOrg(uint _voteRoundId) private view returns(uint) {
+        VotingRoundDetails storage votingDetails = votingRounds[_voteRoundId];
+        uint winningOrgId;
+        uint maxScore;
+        for (uint i = 0; i < votingDetails.orgs.length; i++) {
+            uint currOrg = votingDetails.orgs[i];
+            if (votingDetails.votesReceived[currOrg] > maxScore) {
+                winningOrgId = currOrg;
+                maxScore = votingDetails.votesReceived[currOrg];
+            } 
+        }
+
+        return winningOrgId;
     }
 
     function _canVote(uint _voteRoundId, address _user) private pure returns(bool) {
