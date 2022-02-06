@@ -91,7 +91,7 @@ export default function VotingPage() {
 }
 
 const Container = styled.section`
-  height: calc(100vh - 97px);
+  height: calc(100vh - 93px);
   background-color: ${colors.blue};
   display: flex;
   flex-direction: column;
